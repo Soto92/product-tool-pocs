@@ -7,6 +7,12 @@ layers before any content is handed to a downstream LLM/VLM.
 Built with **Node.js / TypeScript / Fastify** (backend) and
 **React + Vite + TypeScript + Tailwind CSS** (frontend).
 
+## Demo
+
+[▶ Watch the demo video](./demo/demo.mp4)
+
+<video src="./demo/demo.mp4" controls muted playsinline width="100%"></video>
+
 ## Detection Layers
 
 | Layer | Service | Purpose |
