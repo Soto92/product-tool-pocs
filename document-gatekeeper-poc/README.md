@@ -9,9 +9,7 @@ Built with **Node.js / TypeScript / Fastify** (backend) and
 
 ## Demo
 
-[▶ Watch the demo video](./demo/demo.mp4)
-
-<video src="./demo/demo.mp4" controls muted playsinline width="100%"></video>
+https://github.com/user-attachments/assets/9b7bc2dc-f58e-4657-8d85-b8451c12d00d
 
 ## Detection Layers
 
