@@ -51,10 +51,28 @@ export async function inspectPdfBuffer(buffer: Buffer): Promise<PdfInspectionRes
     // Detect Invisible Text Rendering Mode (Tr = 3) or Near-White RGB fills in OperatorList
     let hasInvisibleRenderMode = false;
     let nearWhiteFillCount = 0;
+    // pdfjs silently drops text outside the page from getTextContent(), so we also
+    // collect out-of-bounds text matrices straight from the operator list.
+    const offCanvasMatrices: Array<{ x: number; y: number }> = [];
+    let pageHasOffCanvasItem = false;
 
     for (let i = 0; i < opList.fnArray.length; i++) {
       const fn = opList.fnArray[i];
       const args = opList.argsArray[i];
+
+      // OPS.setTextMatrix === 20 — args are [a, b, c, d, e, f]
+      if (fn === pdfjsLib.OPS.setTextMatrix && Array.isArray(args) && args.length === 6) {
+        const tx = args[4] as number;
+        const ty = args[5] as number;
+        const isOut =
+          tx < -15 ||
+          ty < -15 ||
+          tx > viewport.width + 15 ||
+          ty > viewport.height + 15;
+        if (isOut && !offCanvasMatrices.some((c) => c.x === tx && c.y === ty)) {
+          offCanvasMatrices.push({ x: tx, y: ty });
+        }
+      }
 
       // OPS.setTextRenderingMode === 38 (mode 3 = invisible text)
       if (fn === pdfjsLib.OPS.setTextRenderingMode && args?.[0] === 3) {
@@ -101,6 +119,7 @@ export async function inspectPdfBuffer(buffer: Buffer): Promise<PdfInspectionRes
         y > viewport.height + 15;
 
       if (isMicroFont || isOffCanvas) {
+        pageHasOffCanvasItem = pageHasOffCanvasItem || isOffCanvas;
         hiddenSegments.push(text);
         findings.push({
           id: `PDF-GEOM-P${pageNum}-${Math.random().toString(36).slice(2, 7)}`,
@@ -125,6 +144,23 @@ export async function inspectPdfBuffer(buffer: Buffer): Promise<PdfInspectionRes
         } else {
           hiddenSegments.push(text);
         }
+      }
+    }
+
+    // Text matrices outside the page bounds are dropped by pdfjs' text extractor,
+    // so report them straight from the operator list (covers off-canvas injections).
+    if (!pageHasOffCanvasItem) {
+      for (const m of offCanvasMatrices) {
+        findings.push({
+          id: `PDF-MATRIX-P${pageNum}-${Math.abs(Math.round(m.x))}-${Math.abs(Math.round(m.y))}`,
+          layer: 'L3_PDF_AST_GEOMETRY',
+          severity: 'HIGH',
+          ruleId: 'PDF_OFF_CANVAS_TEXT',
+          title: `Off-Canvas Text Matrix Detected (x:${Math.round(m.x)}, y:${Math.round(m.y)})`,
+          description: `Page ${pageNum} positions text outside its MediaBox (${Math.round(viewport.width)}x${Math.round(viewport.height)}). pdfjs' text extractor silently drops these items, but extractors that read the raw content stream still capture them.`,
+          evidence: `setTextMatrix [.., ${Math.round(m.x)}, ${Math.round(m.y)}] outside page bounds`,
+          pageNumber: pageNum
+        });
       }
     }
 

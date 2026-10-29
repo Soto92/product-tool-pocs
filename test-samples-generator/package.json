@@ -1,0 +1,20 @@
+{
+  "name": "test-samples-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generates clean and malicious document samples (PDF/JPG) for testing the Document Gatekeeper.",
+  "scripts": {
+    "generate": "tsx src/generateSamples.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}

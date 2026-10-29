@@ -35,6 +35,13 @@ Four synthetic samples are generated on the fly (no external files needed):
 | `poisoned-metadata-pdf` | BLOCK / 100 | `<\|im_start\|>` tokens + exfil image in Author/Subject |
 | `unicode-smuggling-txt` | BLOCK / 100 | Zero-width / BiDi chars + persona hijack |
 
+### Offline test corpus
+
+A standalone generator lives in [`../test-samples-generator`](../test-samples-generator):
+`npm install && npm run generate` writes five files (clean + four attack vectors,
+including PDF off-canvas text and a low-contrast EXIF/OCR image) to
+`test-samples-generator/test-samples/`, ready to drag into the dashboard.
+
 ## Running
 
 ```bash

@@ -128,9 +128,8 @@ export async function analyzeFile(buffer: Buffer, originalName: string, declared
       const res = await inspectImageOcr(buffer);
       imgFindings = res.findings;
       rawExtractedText = res.ocrText || rawExtractedText;
-      if (res.ocrText && !visibleCleanText) {
-        visibleCleanText = res.ocrText;
-      }
+      visibleCleanText = res.cleanText;
+      hiddenSegments.push(...res.hiddenSegments);
     } catch (e) {
       // ignore
     }
