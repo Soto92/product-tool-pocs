@@ -6,30 +6,33 @@
 This document is the single source of truth for the switches in the top bar. If a flag
 is not listed here, it does not belong in the UI.
 
-## 1. Two kinds of switches
+## 1. Defense switches are the top bar
 
-The top bar separates **what the lab simulates** from **what it defends with**:
+The top bar is reserved for **defenses**. A switch in the top bar always means
+"enable this protection". This keeps the demo honest: turning a switch **on** can only
+reduce the attack surface, and turning every switch **off** is the damage state.
 
-| Group | Color | Question it answers | Examples |
-| --- | --- | --- | --- |
-| **Scenario** | Amber/orange | What attack surface is active? | Indirect prompt injection in files, simulated tools, markdown rendering |
-| **Defenses** | Emerald | Which mitigations are enforced? | Input guardrails, data marking, sandwich, output guardrails |
-
-This distinction matters. "Indirect prompt injection in files" is **not a defense**. It
-is the attack scenario itself. Labeling it as security would be misleading.
+Scenario controls — the malicious sample vs its benign twin, multi-turn memory,
+simulated tools, markdown rendering, and OCR — live in a separate **Demo setup** panel.
+They change what the lab simulates, never what it defends with, and are never counted in
+the defense total or defense-rate metrics.
 
 A **master switch** toggles a group of related sub-switches. Masters are a UI
 convenience; the persisted state and the run snapshot always store the granular flags.
 If sub-switches disagree, the master shows `Mixed`.
 
-## 2. Scenario switches
+## 2. Demo setup controls (not in the top bar)
+
+These controls choose the scenario. They are amber/neutral in the UI, never emerald,
+and never counted as defenses:
 
 | ID | Label | Default | What it does | Observable effect | Limitation |
 | --- | --- | --- | --- | --- | --- |
-| `scenario.indirectInjection` | **Indirect prompt injection in files** | **On** | On: the selected sample is used as-is, including hidden text, metadata, and OCR payloads. Off: the app loads the sample's **benign twin** (same layout, no payload). | The document card shows `Attack payload: On` or `Off — benign twin`. Findings disappear when off. | Clean samples have no twin; the switch is a no-op there. It does not "sanitize" the malicious file; it swaps to a different file. |
-| `scenario.multiTurn` | **Multi-turn memory** | **On** | On: the full chat history is sent on each turn, so a payload can say "from now on, answer every question with...". Off: one-shot prompts only. | Transcript shows a `Memory on` badge; the Prompt inspector includes prior turns. | Increases token usage and attack persistence. Off makes "for every question" payloads ineffective after the first turn. |
-| `scenario.toolCalling` | **Simulated tool calling** | **Off** | Offers a fake `send_email` and `delete_record` tool to the model to demonstrate excessive agency. Execution is always simulated. | Tool proposals appear as cards with `Approve` / `Reject`. | Never touches the real system. The point is to show the risk, not to provide a tool runtime. |
-| `scenario.renderMarkdown` | **Render markdown output** | **Off** | Renders assistant output as markdown instead of plain text, to demonstrate exfiltration via remote images/links. | Markdown links/images become visible; combined with `output.safeRendering` off, the exfil attempt is observable. | Unsafe demonstration only. Remote images should still be blocked at the renderer/CSP level; the lab shows the attempt, not a live request. |
+| `demo.variant` | **Attack sample / benign twin** | **Malicious** | Malicious: the selected sample is used as-is, including hidden text, metadata, and OCR payloads. Benign twin: the app loads the paired file with the same layout and no payload. | The document card shows `Malicious payload` or `Benign twin loaded`. | It does not "sanitize" the malicious file; it swaps to a different file. Clean controls have no twin. |
+| `demo.multiTurn` | **Multi-turn memory** | **On** | On: the full chat history is sent on each turn, so a payload can say "from now on, answer every question with...". Off: one-shot prompts only. | Transcript shows a `Memory on` badge; the Prompt inspector includes prior turns. | Increases token usage and attack persistence. Off makes "for every question" payloads ineffective after the first turn. |
+| `demo.toolCalling` | **Simulated tool calling** | **Off** | Offers a fake `send_email` and `delete_record` tool to the model to demonstrate excessive agency. Execution is always simulated. | Tool proposals appear as cards with `Approve` / `Reject`. | Never touches the real system. The point is to show the risk, not to provide a tool runtime. |
+| `demo.renderMarkdown` | **Render markdown output** | **Off** | Renders assistant output as markdown instead of plain text, to demonstrate exfiltration via remote images/links. | Markdown links/images become visible; combined with `output.safeRendering` off, the exfil attempt is observable. | Unsafe demonstration only. Remote images should still be blocked at the renderer/CSP level; the lab shows the attempt, not a live request. |
+| `demo.ocr` | **Read text from images (OCR)** | **On** | Runs OCR, including a low-contrast second pass, so image text can reach the model. | Image text appears in the extracted segments. | Slow; downloads language data. When off, images are metadata-only. |
 
 ### 2.1 Benign twins
 
@@ -44,7 +47,7 @@ format but no payload. The manifest records the pair:
 }
 ```
 
-The scenario switch is an A/B control: it isolates the effect of the payload from the
+The variant control is an A/B control: it isolates the effect of the payload from the
 effect of the document layout. It is not a security boundary and must never be counted
 as a defense in telemetry or evaluation.
 
@@ -56,15 +59,12 @@ as a defense in telemetry or evaluation.
 
 | ID | Label | Default | What it does | Observable effect | Limitation |
 | --- | --- | --- | --- | --- | --- |
-| `input.unicode` | Normalize invisible Unicode | On | NFKC-normalizes text and removes zero-width, bidi-control, and Unicode Tag characters before prompt assembly. | Inspector shows "N invisible characters removed" and the cleaned text. | Does not remove visible malicious text; aggressive normalization can alter legitimate scripts. |
-| `input.metadata` | Strip document metadata | On | Excludes PDF Info/XMP and image EXIF/XMP from the prompt. Metadata remains visible in Findings. | Metadata segments are marked redacted in the prompt diff. | Metadata copied into visible text is unaffected. |
-| `input.hiddenLayers` | Strip hidden text layers | On | Redacts segments classified as hidden: micro-font, off-canvas, invisible render mode (`Tr=3`), and near-white page fills. | Hidden segments are struck through and absent from the prompt. | Heuristic; pdf.js does not expose reliable per-run color; visible malicious text is unaffected. |
+| `input.unicode` | Normalize invisible Unicode | On in recommended | NFKC-normalizes text and removes zero-width, bidi-control, and Unicode Tag characters before prompt assembly. | Inspector shows "N invisible characters removed" and the cleaned text. | Does not remove visible malicious text; aggressive normalization can alter legitimate scripts. |
+| `input.metadata` | Strip document metadata | On in recommended | Excludes PDF Info/XMP and image EXIF/XMP from the prompt. Metadata remains visible in Findings. | Metadata segments are marked redacted in the prompt diff. | Metadata copied into visible text is unaffected. |
+| `input.hiddenLayers` | Strip hidden text layers | On in recommended | Redacts segments classified as hidden: micro-font, off-canvas, invisible render mode (`Tr=3`), and near-white page fills. | Hidden segments are struck through and absent from the prompt. | Heuristic; pdf.js does not expose reliable per-run color; visible malicious text is unaffected. |
 
-**Capability switch (not a guardrail, not counted in the master):**
-
-| ID | Label | Default | What it does | Limitation |
-| --- | --- | --- | --- | --- |
-| `input.ocr` | Read text from images (OCR) | On | Runs OCR, including a low-contrast second pass, so image text can reach the model. | Slow; downloads language data; when off, images are metadata-only and cannot demonstrate OCR injection. |
+OCR is a demo capability, not a guardrail: see `demo.ocr` in section 2. It is always
+outside the input master and the defense total.
 
 **Policy switch (separate from the master):**
 
@@ -111,9 +111,9 @@ validation is a separate advanced flag and is not part of the master.
 
 | ID | Label | Default | What it does | Observable effect | Limitation |
 | --- | --- | --- | --- | --- | --- |
-| `output.blockCanary` | Block payload canary | On | If the output contains the payload canary or a high-confidence payload signature, blocks the response and stores it behind `Show blocked output`. | Red blocked banner with matched evidence. | Signature-based; paraphrased injections can pass. Never silently rewrites. |
-| `output.systemPromptLeak` | Detect system-prompt leak | On | Adds a random secret canary to the system prompt and flags it if it appears in the output. | "System prompt leak detected" finding; the canary is never displayed. | Detects verbatim leakage only. |
-| `output.safeRendering` | Sanitize rendered output | On | If markdown rendering is enabled, strips raw HTML, remote images, and dangerous URLs; renders links as inert text. | With `Render markdown` on, an exfil image is shown as blocked text. | The default transcript is plain text; this flag is a no-op unless markdown rendering is on. |
+| `output.blockCanary` | Block payload canary | On in recommended | If the output contains the payload canary or a high-confidence payload signature, blocks the response and stores it behind `Show blocked output`. | Red blocked banner with matched evidence. | Signature-based; paraphrased injections can pass. Never silently rewrites. |
+| `output.systemPromptLeak` | Detect system-prompt leak | On in recommended | Adds a random secret canary to the system prompt and flags it if it appears in the output. | "System prompt leak detected" finding; the canary is never displayed. | Detects verbatim leakage only. |
+| `output.safeRendering` | Sanitize rendered output | On in recommended | If markdown rendering is enabled, strips raw HTML, remote images, and dangerous URLs; renders links as inert text. | With `Render markdown` on, an exfil image is shown as blocked text. | The default transcript is plain text; this flag is a no-op unless markdown rendering is on. |
 | `output.schemaValidation` | Validate structured output | Off (on in `paranoid`) | Constrains the task to a JSON schema and validates the result before display. | Output is shown as validated fields; invalid output is rejected. | Syntax validation is not semantic safety; injection can still change field values. |
 
 ### 3.6 Human review gate
@@ -128,7 +128,7 @@ Precedence: `input.failClosed` runs first (hard block). If it passes and
 ### 3.7 Least-privilege tools (agency)
 
 **Master:** `agency.leastPrivilege` — toggles both children. Only relevant when
-`scenario.toolCalling` is on.
+`demo.toolCalling` is on.
 
 | ID | Label | Default | What it does | Observable effect | Limitation |
 | --- | --- | --- | --- | --- | --- |
@@ -149,7 +149,7 @@ email, writes files, or makes network requests on behalf of the model.
 | "Output guardrails catch all injections." | They catch known canaries/signatures and enforce rendering policy. |
 | "Human review guarantees safety." | A human can approve a malicious send. |
 | "Read-only tools make the model harmless." | The model can still leak data in text. |
-| "The attack switch is a security control." | It is a scenario A/B control, not a defense. |
+| "The sample-variant control is a security control." | It is a scenario A/B control, not a defense. |
 | "The verdict is a security certification." | It is evidence about one run on one model. |
 
 Persistent UI note: *"No defense here is guaranteed. This lab is for demonstration and
@@ -157,9 +157,9 @@ measurement."*
 
 ## 5. Presets
 
-`✓` = enabled, `—` = disabled. Scenario switches are independent and not part of the
-preset matrix; `scenario.indirectInjection` stays On unless the user turns it off.
-`input.ocr` stays On in every preset.
+`✓` = enabled, `—` = disabled. Demo setup controls are independent and not part of the
+preset matrix; the sample variant defaults to the malicious file. OCR is a demo capability,
+not a defense, and stays On in every preset.
 
 | Flag | `unsafe` | `naive` | `spotlight` | `sandwich` | `clean` | `recommended` | `paranoid` |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -194,15 +194,17 @@ preset matrix; `scenario.indirectInjection` stays On unless the user turns it of
 `paranoid` is deliberately not the default: security has a usability cost. Over-refusal
 on clean documents is a measured regression, not a win.
 
-On first visit, the app starts at **`recommended`** with `scenario.indirectInjection` and
-`scenario.multiTurn` on, so the demo is safe by default but still shows the attack path.
+On first visit, the app starts at **`unsafe`** — every defense off — with the malicious
+sample selected, multi-turn on, and OCR on. This is deliberate: the first run demonstrates
+the damage. The **`recommended`** preset is one click away, and turning protections on is
+the second half of the demo. A `Reset` action returns to this vulnerable starting state.
 
 ## 6. Interactions and precedence
 
 ### 6.1 Enforcement order
 
 ```text
-1. scenario.indirectInjection  (select malicious sample or benign twin)
+1. demo.variant                (select malicious sample or benign twin)
 2. extract                     (always)
 3. detect                      (always)
 4. input.failClosed            (block if critical finding)
@@ -229,14 +231,15 @@ cleaned text. If it blocks, sanitization is skipped and the run is recorded as b
 
 | Combination | Behavior |
 | --- | --- |
-| `scenario.indirectInjection` off | Benign twin is loaded; findings disappear; all other flags are still exercised, but there is nothing to inject. |
+| `demo.variant` = benign twin | Benign twin is loaded; findings disappear; all defense flags are still exercised, but there is nothing to inject. |
+| `demo.variant` = malicious | The selected sample is used as-is; the attack path is active regardless of which defenses are on. |
 | `input.failClosed` + critical finding | Run blocked; `Override` requires an explicit confirmation and is recorded. |
 | `human.review` + no findings | Gate is skipped; telemetry says `skipped`. |
 | `human.review` + `Redact and send` | Hidden/metadata segments are added to the redaction list for this run only; the original document is unchanged. |
 | `output.systemPromptLeak` off | No system canary is injected; leak detection is `skipped`. |
 | `output.blockCanary` off + system canary on | Leaks are reported but not blocked; verdict can still be `INJECTION SUCCEEDED`. |
-| `scenario.renderMarkdown` off | `output.safeRendering` is a no-op; telemetry reports it. |
-| `scenario.toolCalling` off | Agency flags are no-ops; telemetry reports `skipped`. |
+| `demo.renderMarkdown` off | `output.safeRendering` is a no-op; telemetry reports it. |
+| `demo.toolCalling` off | Agency flags are no-ops; telemetry reports `skipped`. |
 | `agency.readOnly` on + `agency.confirmCalls` on | No destructive tools are offered; confirmations may still apply to read tools. |
 | `prompt.sandwich` + `prompt.dataMarking` | Data marking wraps the content; sandwich repeats the task after it. Both appear in the prompt diff. |
 | `prompt.refusalExamples` + `paranoid` | Adds tokens; truncation may trigger; over-refusal risk rises. |
@@ -257,24 +260,27 @@ Four zones:
 
 1. **Brand + disclaimer** — "Local demo · no uploads".
 2. **Preset selector** — seven presets + `Custom`.
-3. **Switch panel** — two rows:
-   - **Scenario** (amber): Indirect injection, Multi-turn, Simulated tools, Render
-     markdown.
-   - **Defenses** (emerald): Input guardrails (master), Delimiter & data marking,
-     Sandwich, Instruction hierarchy, Output guardrails (master), Human review,
-     Least-privilege tools (master), Block on critical finding, Refusal examples
-     (advanced).
+3. **Defense switches** — grouped masters and children:
+   - Input guardrails (master), Delimiter & data marking, Sandwich, Instruction
+     hierarchy, Output guardrails (master), Human review, Least-privilege tools
+     (master), Block on critical finding, Refusal examples (advanced).
 4. **Model + actions** — model state, `Run all presets`, overflow menu (`All defenses
    off`, reset, copy demo link, diagnostics).
+
+The **Demo setup** panel is not part of the top bar. It lives beside the sample library
+and contains the sample variant (malicious / benign twin), multi-turn, simulated tools,
+markdown rendering, and OCR. It is visually amber/neutral and explicitly labeled
+"not defenses".
 
 Requirements:
 
 - Every switch has a label and a tooltip with its limitation.
 - Masters show `On`, `Off`, or `Mixed` and expand to reveal children.
-- The dangerous state (`unsafe` or 0 defenses) is visually obvious (red accent).
-- Scenario switches are never styled as defenses.
-- `Indirect prompt injection in files` is On by default and clearly labeled as the attack
-  scenario.
+- The dangerous state (`unsafe` or 0 defenses) is visually obvious (red accent) and
+  labeled "All defenses off — damage demo mode".
+- Demo setup controls are never styled as defenses and are never counted.
+- The sample variant defaults to malicious; the benign twin is a control, not a
+  sanitizer.
 - Toggles use `role="switch"` with `aria-checked` (and `aria-checked="mixed"` for
   masters when applicable).
 - On narrow screens, the switch panel becomes a full-width drawer.
@@ -286,18 +292,19 @@ Wireframe and states: [06-ui-spec.md](06-ui-spec.md).
 Example:
 
 ```text
-/?preset=unsafe&sample=02-white-on-white&q=Summarize%20this%20invoice.&attack=on
+/?preset=unsafe&sample=02-white-on-white&variant=malicious&q=Summarize%20this%20invoice.
 ```
 
 Rules:
 
-- URL stores preset, non-default flags, sample ID, model, question, and scenario flags.
+- URL stores preset, non-default flags, sample ID, variant, model, and question.
 - `flags=` is a comma-separated list of IDs that differ from the preset.
 - Document content is never placed in the URL.
 - Loading a URL restores state but never auto-runs the model.
 - `localStorage` keys: `pil.flags.v2`, `pil.preset.v2`, `pil.model.v1`,
-  `pil.scenario.v1`.
-- "Copy demo link" encodes the current state, including whether the attack is on.
+  `pil.demoSetup.v1`.
+- "Copy demo link" encodes the current defense state and whether the malicious sample or
+  benign twin is selected. `variant` is never treated as a defense.
 
 ## 9. Acceptance criteria
 
@@ -309,17 +316,18 @@ Rules:
 - The preset matrix in code matches the table in this document (test-enforced).
 - A run records granular flags, derived masters, and `flagResults` statuses.
 - `custom` is derived automatically when flags differ from the selected preset.
-- Scenario flags never appear in defense counts or defense-rate metrics.
+- Demo setup controls never appear in defense counts or defense-rate metrics.
+- The default first-visit state is `unsafe` (0 defenses) with the malicious sample.
 
 ### 9.2 Top bar
 
 - All defenses can be toggled within two clicks from the landing state.
-- Scenario and defense switches are visually distinct and labeled.
+- The top bar contains only defense switches; demo setup controls are separate and
+  labeled "not defenses".
 - The current preset and any custom deviation are unambiguous.
 - The unsafe state is visually distinct and labeled.
 - No switch is hidden behind a developer-only feature flag.
-- `Indirect prompt injection in files` can be turned off to show the benign twin
-  without changing any defense.
+- The sample variant can be switched to the benign twin without changing any defense.
 
 ### 9.3 Honesty
 
@@ -327,7 +335,7 @@ Rules:
 - Data marking, sandwich, and instruction hierarchy are described as probabilistic.
 - The persistent disclaimer is visible on every screen, including fullscreen demo mode.
 - The verdict explanation names the evidence and does not imply a guarantee.
-- Scenario switches are never counted as defenses in the UI or exports.
+- Demo setup controls are never counted as defenses in the UI or exports.
 
 ## 10. Recommendations not adopted for v1
 
@@ -346,7 +354,7 @@ Rules:
 | --- | --- | --- |
 | F1 | Should `human.review` be on in `recommended` for live demos, despite the friction? | Phase 1 |
 | F2 | Do we expose `temperature`/`seed` in an "Advanced" panel? | Phase 3 |
-| F3 | Should `input.ocr` default to off to save bandwidth on first load? | Phase 4 |
+| F3 | Should `demo.ocr` default to off to save bandwidth on first load? | Phase 4 |
 | F4 | Does `output.schemaValidation` work with the chosen Qwen build? | Phase 5 |
 | F5 | Should "All defenses off" be a one-click button or a preset only? | Phase 1 |
 | F6 | Do we need a "payload placement" scenario switch (hidden/visible/metadata/OCR), or is sample selection enough? | Phase 2 |

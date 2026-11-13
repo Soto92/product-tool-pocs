@@ -44,8 +44,8 @@ src/
 - **Flags are data, not booleans scattered in components.** The catalog in
   [`docs/03-features-and-toggles.md`](../docs/03-features-and-toggles.md) is the source of
   truth; a typed object drives the UI, the pipeline, and tests.
-- **Scenario switches are not defenses.** Do not include `scenario.*` in defense counts
-  or metrics.
+- **Demo setup options are not defenses.** Do not include `demo.*` in defense counts or
+  metrics; the top bar is reserved for defense switches.
 - **Pure functions first.** Extraction, detection transforms, prompt assembly, canary
   detection, and verdict computation must be testable without a browser.
 - **No HTML injection.** Model output and extracted text render as text by default.

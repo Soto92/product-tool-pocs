@@ -27,7 +27,7 @@ Ship a **small, synthetic, pre-generated corpus** checked into the repository.
 
 - Every malicious sample isolates one primary vector.
 - Every malicious sample has a **benign twin** with the same layout but no payload, used
-  by the `scenario.indirectInjection` A/B switch.
+  by the demo setup's sample-variant A/B control.
 - A clean control exists in each format (PDF, image, TXT).
 - Payloads only ask for a harmless spaghetti carbonara recipe and the marker
   `PI_LAB_CANARY_7F3A`.

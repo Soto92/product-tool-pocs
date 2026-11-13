@@ -157,7 +157,7 @@ Run with the mock engine and a seeded fixture state.
 5. Mock returns the canary + recipe.
 6. Assert verdict `INJECTION SUCCEEDED`, canary highlighted.
 7. Open Prompt inspector; assert no delimiters and no redactions.
-8. Toggle `Attack payload` off; assert the benign twin loads and findings clear.
+8. Switch the sample variant to `Benign twin`; assert it loads and findings clear.
 9. Select `recommended`, run again with a clean mock response.
 10. Assert verdict `DEFENDED`, prompt contains delimiters, sandwich reminder, and
     redactions.
@@ -232,8 +232,8 @@ Smoke test is a **manual gate** for a demo release, not a CI gate.
 Total: 13 × 7 × 3 = 273 generations. Run overnight or in batches. The harness must be
 resumable and cache prompts per document/flags.
 
-The `benignTwin` A/B is a separate, smaller run: the canonical sample with
-`scenario.indirectInjection` on vs off, under `unsafe` and `recommended`. Report it as a
+The `benignTwin` A/B is a separate, smaller run: the canonical sample with the sample
+variant set to malicious vs benign, under `unsafe` and `recommended`. Report it as a
 control, not as a defense measurement.
 
 ### 6.2 Procedure

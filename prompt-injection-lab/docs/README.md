@@ -36,13 +36,13 @@ Architecture decisions live in [`adr/`](adr/):
 ## Conventions
 
 - **Language:** English for UI, docs, code, and comments.
-- **Status labels:** `Draft`, `Accepted`, `Superseded`. All documents here are
-  `Draft` until Phase 0 review closes.
+- **Status labels:** `Draft`, `Accepted`, `Superseded`. Phase 0 review has closed; docs
+  remain `Draft` while Phase 1 implementation refines them.
 - **Normative words:** MUST, SHOULD, MAY follow RFC 2119.
 - **Placeholders:** anything marked `TBD` is intentionally undecided and must be
   resolved before the phase that needs it.
-- **No code in Phase 0:** code fences in these docs are contracts and sketches, not
-  implementation. The app starts in Phase 1.
+- **Implementation started:** code fences in these docs are still contracts and sketches,
+  not a description of every implementation detail.
 
 ## Glossary
 
@@ -52,7 +52,7 @@ Architecture decisions live in [`adr/`](adr/):
 | **Payload** | The hidden instruction embedded in a sample document. |
 | **Canary** | A unique marker string the payload asks the model to print. Its presence in the output is strong evidence that the injection worked. |
 | **Defense switch** | A named pipeline stage that can be enabled or disabled from the top bar for demonstration. |
-| **Scenario switch** | A demo control that changes the attack surface (for example, the attack payload, multi-turn memory, simulated tools). It is never counted as a defense. |
+| **Demo setup control** | A control that changes what the lab simulates (sample variant, multi-turn memory, simulated tools, markdown, OCR). It is never counted as a defense. |
 | **Preset** | A named combination of defense flags (`unsafe`, `naive`, `spotlight`, `sandwich`, `clean`, `recommended`, `paranoid`). |
 | **Spotlighting / data marking** | Wrapping untrusted content in explicit delimiters, escaping delimiter tokens, and instructing the model to treat it as passive data, not instructions. |
 | **Sandwich defense** | Repeating the legitimate task and the passive-data reminder *after* the untrusted content, so the last instruction the model reads is the trusted one. |

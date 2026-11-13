@@ -12,8 +12,8 @@ security demos:
 
 1. **Security theater:** a switch hides evidence or changes a label without changing the
    actual prompt or output.
-2. **Conflated controls:** the attack switch is presented as a defense, so "turning off
-   the attack" looks like "the defense worked".
+2. **Conflated controls:** the sample-variant control is presented as a defense, so "turning
+   off the attack" looks like "the defense worked".
 
 The pipeline also needs deterministic, testable behavior: given the same document,
 flags, model, and seed, the prompt assembly must be reproducible (except for nonces).
@@ -21,14 +21,16 @@ flags, model, and seed, the prompt assembly must be reproducible (except for non
 ## Decision
 
 Model the runtime as an **ordered pipeline of independent stages**, with two distinct
-kinds of switches:
+kinds of controls:
 
-1. **Scenario switches** (`scenario.*`) change the attack surface:
-   - indirect injection on/off (malicious sample vs benign twin);
+1. **Demo setup controls** (`demo.*`) live outside the defense switch bar and change what
+   the lab simulates:
+   - sample variant (malicious file vs benign twin);
    - multi-turn memory;
    - simulated tool calling;
-   - markdown rendering.
-2. **Defense switches** change enforcement:
+   - markdown rendering;
+   - OCR capability.
+2. **Defense switches** change enforcement and are the only controls in the top bar:
    - input guardrails (Unicode, metadata, hidden layers) plus a fail-closed policy;
    - prompt defenses (instruction hierarchy, refusal examples, data marking, sandwich);
    - output guardrails (canary blocking, system-prompt leak, safe rendering, schema
@@ -43,15 +45,16 @@ Rules:
 - **Masters are UI composition.** `input.guardrails`, `output.guardrails`, and
   `agency.leastPrivilege` toggle groups of granular flags. Persisted state and run
   snapshots store the granular flags; masters are derived (`On` / `Off` / `Mixed`).
-- **Fixed precedence.** Scenario selection → fail-closed → human review → sanitization →
+- **Fixed precedence.** Demo setup → fail-closed → human review → sanitization →
   system prompt → data marking → sandwich → generation → output guard → verdict.
-- **Immutable run records.** A run stores the granular flags, scenario flags, preset,
+- **Immutable run records.** A run stores the granular flags, demo options, preset,
   prompt hash, model, seed, flag results, and verdict. Changing a switch marks the
   current view stale but never rewrites a past run.
 - **Every flag has an observable effect.** If a flag is a no-op for a document or
   scenario, the UI says `no-op` or `skipped`; it is not silently ignored.
-- **Scenario is never a defense.** Scenario switches are excluded from defense counts,
-  defense-rate metrics, and "defenses enabled" summaries.
+- **Demo setup is never a defense.** Sample variant, multi-turn, tools, markdown, and
+  OCR are excluded from defense counts, defense-rate metrics, and "defenses enabled"
+  summaries.
 - **Honesty over reassurance.** Tooltips state limitations; the UI says "no findings",
   never "safe"; blocked output is preserved behind a disclosure.
 
@@ -94,5 +97,5 @@ Rules:
 
 - Freeze the flag catalog IDs in Phase 1 and test-enforce the preset matrix.
 - Implement the precedence table as a single function with unit tests.
-- Add `flagResults` / `scenarioResults` telemetry in Phase 5.
+- Add `flagResults` / `demoResults` telemetry in Phase 5.
 - Review wording to ensure no defense is described as guaranteed.

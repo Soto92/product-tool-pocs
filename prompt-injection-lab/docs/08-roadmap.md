@@ -49,7 +49,8 @@ Durations are estimates for one developer, not commitments.
 - No contradictory flag names or preset counts across docs.
 - The canonical demo is reproducible on paper: sample, preset, question, expected output.
 - Every defense switch has a limitation statement.
-- Scenario switches are explicitly separated from defenses.
+- Demo setup controls (sample variant, multi-turn, tools, markdown, OCR) are explicitly
+  separated from defenses.
 - The corpus has 13 samples, each malicious sample has a benign twin, and every sample
   uses only `example.invalid`.
 - Open questions have owners or target phases.
@@ -65,10 +66,11 @@ Durations are estimates for one developer, not commitments.
 - Scaffold React 19 + Vite 8 + TypeScript 5 + Tailwind 4.
 - Define the flag catalog as a typed object with stable IDs and labels; no scattered
   booleans.
-- Build the three-column shell, top bar, scenario row, defense groups, inspector tabs.
+- Build the three-column shell, top bar with defense groups only, separate demo setup
+  panel, and inspector tabs.
 - Implement presets (`unsafe`, `naive`, `spotlight`, `sandwich`, `clean`, `recommended`,
   `paranoid`, `custom`) and master/sub-switch behavior (`On` / `Off` / `Mixed`).
-- Implement URL + `localStorage` persistence, including scenario flags.
+- Implement URL + `localStorage` persistence for defense flags and demo setup options.
 - Implement the mock engine: deterministic responses, never emits
   `INJECTION SUCCEEDED`, dry-run verdicts are `INCONCLUSIVE`.
 - Render the verdict banner, stale-run badge, and blocked-output disclosure with mock
@@ -99,7 +101,7 @@ screens; derived master state with tests.
 - PDF: `pdfjs-dist` text layer + operator list + metadata; classify micro-font,
   off-canvas, `Tr=3`, near-white page fill.
 - TXT: UTF-8 with fallback and replacement-character reporting.
-- Images: `exr` metadata via `exifr`; OCR via `tesseract.js` behind `input.ocr`, including a
+- Images: EXIF metadata via `exifr`; OCR via `tesseract.js` behind `demo.ocr`, including a
   low-contrast second pass.
 - Detection rules: Unicode, hidden geometry, metadata injection, delimiter smuggling,
   exfiltration patterns, encoded payloads. Findings carry severity and evidence.
@@ -188,8 +190,8 @@ framing, and a documented "model-dependent" outcome instead of faking success.
 - Implement `input.failClosed` and the `human.review` gate with
   approve/redact/cancel and immutable run records.
 - Implement simulated tools, read-only mode, and confirmation cards.
-- Implement `scenario.multiTurn` and `scenario.renderMarkdown` with safety caps.
-- Wire `flagResults` and `scenarioResults` (`applied` / `no-op` / `skipped` / `failed`).
+- Implement `demo.multiTurn` and `demo.renderMarkdown` with safety caps.
+- Wire `flagResults` and `demoResults` (`applied` / `no-op` / `skipped` / `failed`).
 - Add the preset matrix and "Run all presets" comparison.
 
 **Acceptance criteria**
@@ -201,7 +203,7 @@ framing, and a documented "model-dependent" outcome instead of faking success.
 - Human review never generates before a decision; cancel is recorded as
   `INCONCLUSIVE`.
 - Output blocking preserves the raw output and never silently rewrites it.
-- A/B, defense coverage, and metrics never count scenario switches as defenses.
+- A/B, defense coverage, and metrics never count demo setup options as defenses.
 
 **Risk:** flag interactions produce confusing prompts. Mitigation: a precedence table
 (tested) and a prompt diff view.
@@ -276,18 +278,18 @@ framing, and a documented "model-dependent" outcome instead of faking success.
 | # | Question | Owner | Needed by |
 | --- | --- | --- | --- |
 | R1 | Is `human.review` on by default in `recommended`? | Product | Phase 1 |
-| R2 | Should the attack switch default to On for first-time visitors? | Product | Phase 1 |
+| R2 | Is the malicious sample the right first-visit default, or should the app start on the benign twin? | Product | Phase 1 |
 | R3 | Which model is the reference for release claims? | Evaluation | Phase 4 |
 | R4 | Do we ship a recorded demo for no-WebGPU environments? | Product | Phase 7 |
 | R5 | Is schema validation worth the UX cost in `paranoid`? | Product | Phase 5 |
-| R6 | Do we need a payload-placement scenario switch, or is sample selection enough? | Product | Phase 2 |
+| R6 | Do we need a payload-placement demo control (hidden/visible/metadata/OCR), or is sample selection enough? | Product | Phase 2 |
 
 ## 12. Definition of done (project)
 
 - The canonical demo works on a clean browser profile.
 - All 13 samples and 7 presets run; results are recorded honestly.
 - Every switch has a documented effect and limitation.
-- Scenario switches are never counted as defenses.
+- Demo setup options are never counted as defenses.
 - E2E, unit, and accessibility gates pass.
 - A reviewer can explain the attack and the defenses in under five minutes using the app
   alone.

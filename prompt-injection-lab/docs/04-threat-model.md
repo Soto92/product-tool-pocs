@@ -137,12 +137,12 @@ Boundary rules:
 
 Full payloads and expected outcomes: [05-test-corpus.md](05-test-corpus.md).
 
-### 6.1 The attack switch is not a defense
+### 6.1 The sample variant is not a defense
 
-`scenario.indirectInjection` selects the malicious sample or its benign twin. It changes
+The demo setup's sample variant selects the malicious sample or its benign twin. It changes
 **what is being tested**, not how well the app defends. It MUST NOT be counted in defense
-coverage, defense-rate metrics, or "defenses enabled" counts. Toggling it off is equivalent
-to running the clean control: useful for A/B demonstration, not a mitigation.
+coverage, defense-rate metrics, or "defenses enabled" counts. Loading the benign twin is
+equivalent to running the clean control: useful for A/B demonstration, not a mitigation.
 
 ## 7. Defense mapping
 
@@ -155,7 +155,7 @@ to running the clean control: useful for A/B demonstration, not a mitigation.
 | V5 `Tr=3` | `input.hiddenLayers` | `prompt.dataMarking` | Page-level detection; mixed visible/invisible runs |
 | V6 metadata | `input.metadata` | `prompt.instructionHierarchy` | Metadata copied into visible text |
 | V7 Unicode | `input.unicode` | `prompt.dataMarking` | Homoglyphs and semantic obfuscation remain |
-| V8 OCR-only | `input.ocr` (to see it) + `input.unicode` | `prompt.dataMarking`, `prompt.sandwich` | OCR errors; no structural hiding signal |
+| V8 OCR-only | `demo.ocr` (to see it) + `input.unicode` | `prompt.dataMarking`, `prompt.sandwich` | OCR errors; no structural hiding signal |
 | V9 image metadata | `input.metadata` | `prompt.instructionHierarchy` | Metadata embedded in pixels |
 | V10 delimiters | `prompt.dataMarking` (escaping) | `prompt.instructionHierarchy` | Novel delimiters; model-specific tokens |
 | V11 exfil markdown | `output.safeRendering` | Render-as-text default, CSP | Plain-text display still shows the URL; user may copy it |
@@ -225,7 +225,7 @@ apply, and they are probabilistic.
 2. A human sees a $320 receipt.
 3. OCR (especially the low-contrast pass) recovers the hidden instruction.
 
-**Mitigations:** `input.ocr` reveals the attack; `prompt.dataMarking` +
+**Mitigations:** `demo.ocr` reveals the attack; `prompt.dataMarking` +
 `prompt.sandwich` + `prompt.instructionHierarchy` frame it as data;
 `output.blockCanary` catches the canary.
 **Residual:** OCR misses; image compression destroys text; no structural hiding signal.

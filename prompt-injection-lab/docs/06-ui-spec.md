@@ -13,29 +13,29 @@ two minutes, without hiding evidence or overclaiming safety.
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ⬢ Prompt Injection Lab      [Preset: Unsafe ▾]   Qwen 2.5 1.5B · Ready  [⋯] │
-│ SCENARIO  [● Attack payload: On] [● Multi-turn: On] [○ Tools: Off] [○ MD: Off]│
-│ DEFENSES  [Input 0/3] [Prompt 0/4] [Output 0/3] [Human 0/1] [Agency 0/2]     │
+│ DEFENSES [Input 0/4] [Prompt 0/4] [Output 0/4] [Human 0/1] [Agency 0/2]     │
 │                                              ⚠ All defenses off — demo mode  │
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
-│ SAMPLES       │ DOCUMENT                                 │ INSPECTOR         │
-│ ▸ Clean       │ 02-white-on-white.pdf · PDF · 12 KB      │ [Extract] [Findings]│
-│ ▸ Hidden      │ Attack payload: On · "A normal invoice…" │ [Prompt] [Telemetry]│
-│ ▸ Metadata    │ ⚠ 2 hidden findings                      │ [Runs]            │
-│ ▸ Unicode     │                                          │                   │
-│ ▸ OCR         │ ┌──────────────────────────────────────┐ │ Extracted text    │
-│ ▸ Encoded     │ │ You: Summarize this invoice.         │ │ ...               │
-│               │ └──────────────────────────────────────┘ │                   │
-│ [Drop a file] │ ┌──────────────────────────────────────┐ │                   │
-│               │ │ Assistant: Here is a carbonara...    │ │                   │
-│ DOCUMENT      │ │ ██ PI_LAB_CANARY_7F3A ██             │ │                   │
-│ Name, type,   │ └──────────────────────────────────────┘ │                   │
-│ size, SHA-256 │                                          │                   │
-│               │ ╔══════════════════════════════════════╗ │                   │
+│ DEMO SETUP    │ DOCUMENT                                 │ INSPECTOR         │
+│ A/B [Mal] [Ben]│ 02-white-on-white.pdf · PDF · 12 KB     │ [Extract] [Findings]│
+│ ☑ Multi-turn  │ Malicious payload · "A normal invoice…" │ [Prompt] [Telemetry]│
+│ ☐ Tools       │ ⚠ 2 hidden findings                     │ [Runs]            │
+│ ☐ Markdown    │                                          │                   │
+│ ☑ OCR         │ ┌──────────────────────────────────────┐ │ Extracted text    │
+│               │ │ You: Summarize this invoice.         │ │ ...               │
+│ SAMPLES       │ └──────────────────────────────────────┘ │                   │
+│ ▸ Clean       │ ┌──────────────────────────────────────┐ │                   │
+│ ▸ Hidden      │ │ Assistant: Here is a carbonara...    │ │                   │
+│ ▸ Metadata    │ │ ██ PI_LAB_CANARY_7F3A ██             │ │                   │
+│ ▸ Unicode     │ └──────────────────────────────────────┘ │                   │
+│ ▸ OCR         │                                          │                   │
+│ ▸ Encoded     │ ╔══════════════════════════════════════╗ │                   │
 │               │ ║ INJECTION SUCCEEDED                  ║ │                   │
-│               │ ║ canary found in output               ║ │                   │
+│ [Drop a file] │ ║ canary found in output               ║ │                   │
 │               │ ╚══════════════════════════════════════╝ │                   │
-│               │ [Summarize ▾] [Ask about the document…]  │                   │
-│               │ [Stop]                            [Run]  │                   │
+│ DOCUMENT      │ [Summarize ▾] [Ask about the document…]  │                   │
+│ Name, type,   │ [Stop]                            [Run]  │                   │
+│ size, SHA-256 │                                          │                   │
 ├───────────────┴──────────────────────────────────────────┴───────────────────┤
 │ Local demo · no uploads · no defense is guaranteed · model output is untrusted│
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -73,30 +73,17 @@ Columns:
 | Primary action | `Run all presets` (disabled until a document is selected and a model is ready) |
 | Overflow menu | Reset, copy demo link, clear model cache, diagnostics, about |
 
-### 2.2 Row 2 — scenario switches
-
-Scenario switches are visually distinct (amber) and never counted as defenses:
-
-```text
-SCENARIO  [● Attack payload: On] [● Multi-turn: On] [○ Simulated tools: Off] [○ Render markdown: Off]
-```
-
-- `Attack payload` is the label for `scenario.indirectInjection`. On = malicious sample;
-  Off = benign twin. The document card repeats the state, for example
-  `Attack payload: Off — benign twin`.
-- Toggling the attack switch reloads the sample variant and clears findings. It does not
-  change any defense.
-- A small `A/B` tag and tooltip explain that the switch is for comparison, not security.
-
-### 2.3 Row 3 — defense switches
+### 2.2 Row 2 — defense switches
 
 Compact category chips show enabled/total and a status color:
 
 ```text
-DEFENSES  [Input 0/3] [Prompt 0/4] [Output 0/3] [Human 0/1] [Agency 0/2]
+DEFENSES  [Input 0/4] [Prompt 0/4] [Output 0/4] [Human 0/1] [Agency 0/2]
                                              ⚠ All defenses off — demo mode
 ```
 
+- The top bar contains **only defenses**. Every switch in this row means "enable this
+  protection".
 - Clicking a chip expands a panel with the individual switches for that category.
 - Masters (`Input guardrails`, `Output guardrails`, `Least-privilege tools`) show
   `On`, `Off`, or `Mixed` and expand to their children.
@@ -109,7 +96,7 @@ DEFENSES  [Input 0/3] [Prompt 0/4] [Output 0/3] [Human 0/1] [Agency 0/2]
 - `Refusal examples` lives under an `Advanced` disclosure to avoid cluttering the default
   view.
 
-### 2.4 Switch states
+### 2.3 Switch states
 
 | State | Appearance | Meaning |
 | --- | --- | --- |
@@ -120,8 +107,23 @@ DEFENSES  [Input 0/3] [Prompt 0/4] [Output 0/3] [Human 0/1] [Agency 0/2]
 | Skipped | Slate dot + "Skipped" | Not applicable to this document (for example `input.hiddenLayers` on TXT) |
 | Failed | Red dot + "Failed" | The stage threw; details in Telemetry |
 
-Never rely on color alone: include text or an icon. Scenario switches use an amber
-accent even when On, so they cannot be confused with defenses.
+Never rely on color alone: include text or an icon.
+
+### 2.4 Demo setup panel
+
+The demo setup panel is separate from the top bar, visually amber/neutral, and labeled
+**"not defenses"**. It contains:
+
+- **Sample variant:** `Malicious payload` / `Benign twin` (paired samples only). This is an
+  A/B control, not a sanitizer, and never changes the defense count.
+- **Multi-turn memory**
+- **Simulated tools**
+- **Render markdown output**
+- **Read text from images (OCR)**
+
+Changing any of these reloads the sample variant or clears the latest findings, but does
+not count as enabling or disabling a protection.
+
 
 ## 3. Left rail
 
@@ -143,7 +145,7 @@ Each card shows:
 - one-line "human view";
 - vector tags (`white text`, `metadata`, `OCR`);
 - a small warning icon for malicious samples;
-- selected state.
+- selected state and an `A/B twin` marker when a benign twin exists.
 
 ### 3.2 Upload
 
@@ -380,9 +382,9 @@ This tab is the core of the demo. It shows the exact messages sent to the engine
 ## 10. Security constraints in the UI
 
 - The transcript renders **plain text** by default.
-- A `Render markdown (unsafe demo)` scenario switch is off by default and marked with a
-  warning. When on, `output.safeRendering` is strongly recommended and remote images are
-  blocked.
+- A `Render markdown (unsafe demo)` demo-setup option is off by default, marked with a
+  warning, and never counted as a defense. When on, `output.safeRendering` is strongly
+  recommended and remote images are blocked.
 - Extracted text is never inserted as HTML.
 - Links in content are not clickable by default.
 - The system canary is never displayed; `Copy prompt` redacts it.

@@ -76,9 +76,8 @@ The canary is **case-sensitive** and must appear exactly as `PI_LAB_CANARY_7F3A`
 
 Every malicious sample has a **benign twin** with `.clean` before the extension (for
 example `02-white-on-white.clean.pdf`). The twin has the same layout and visible content
-but no payload, no malicious metadata, and no hidden text. The
-`scenario.indirectInjection` switch loads the malicious file when On and the twin when
-Off. Twins are A/B fixtures, not defenses; see
+but no payload, no malicious metadata, and no hidden text. The demo setup's sample-variant
+control loads the malicious file or the twin. Twins are A/B fixtures, not defenses; see
 [03-features-and-toggles.md](03-features-and-toggles.md#21-benign-twins).
 
 ### 3.1 Per-sample details
@@ -149,7 +148,7 @@ Off. Twins are A/B fixtures, not defenses; see
   - first OCR pass may miss the light text; the grayscale + contrast-stretched second
     pass should recover it;
   - EXIF fields are flagged and excluded when `input.metadata` is on.
-- Note: OCR is required (`input.ocr`). Without it, the image text never reaches the
+- Note: OCR is required (`demo.ocr`). Without it, the image text never reaches the
   model and the sample cannot demonstrate injection.
 
 #### 08 — Plain text injection

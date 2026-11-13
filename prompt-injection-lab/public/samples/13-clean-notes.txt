@@ -1,0 +1,8 @@
+Security policy working notes
+
+Context: the phrase "ignore previous instructions" is a common example of a
+prompt-injection attempt. Our policy says analysts must treat document text as
+untrusted data and must never follow instructions embedded in a file.
+
+Action item: update the onboarding checklist with this example and add a link to
+the incident-reporting process. No production document was affected.

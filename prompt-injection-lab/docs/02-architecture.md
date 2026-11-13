@@ -13,8 +13,9 @@
 3. **Detection is always on; enforcement is optional.** The lab always shows what it
    found. Defense switches decide whether findings change the prompt or the output. This
    prevents "security theater" switches that only hide evidence.
-4. **Scenario is not defense.** "Indirect prompt injection in files" is an attack switch;
-   it is never counted as a mitigation.
+4. **Demo setup is not defense.** The sample variant (malicious / benign twin), multi-turn,
+   simulated tools, markdown rendering, and OCR change what the lab simulates. They are
+   never counted as mitigations and do not live in the defense switch bar.
 5. **Runs are immutable snapshots.** Changing a flag never rewrites a past run. This
    makes comparisons honest.
 6. **Degrade gracefully.** Without WebGPU the app still supports a labeled dry-run
@@ -89,9 +90,10 @@ flowchart TB
 
 ### 3.1 UI shell
 
-- **Top bar:** brand, preset selector, scenario switches (attack surface), grouped defense
-  switches (masters + children), model status, "Run all presets", reset.
-- **Left rail:** sample library grouped by vector, upload/drop zone, document metadata.
+- **Top bar:** brand, preset selector, grouped defense switches (masters + children),
+  model status, "Run all presets", reset. The top bar contains only defenses.
+- **Left rail:** demo setup panel (sample variant, multi-turn, tools, markdown, OCR),
+  sample library grouped by vector, upload/drop zone, document metadata.
 - **Center:** chat transcript, verdict banner, composer, run/stop controls.
 - **Right panel:** tabs for Extracted text, Findings, Prompt, Telemetry, Run history.
 - **Footer:** persistent local-only and "no guarantee" disclaimers.
@@ -102,7 +104,7 @@ Detailed layout and states: [06-ui-spec.md](06-ui-spec.md).
 
 | Stage | Responsibility | Deterministic? |
 | --- | --- | --- |
-| Scenario | Select malicious sample or benign twin; configure multi-turn/tools/rendering | Yes |
+| Demo setup | Select malicious sample or benign twin; configure multi-turn/tools/rendering/OCR | Yes |
 | Ingest | File type detection, text extraction, page/segment provenance | Mostly |
 | Detect | Unicode, geometry, metadata, heuristics, OCR findings | Heuristic |
 | Review | Optional fail-closed block and human approval gate | Human / policy |
@@ -114,7 +116,8 @@ Detailed layout and states: [06-ui-spec.md](06-ui-spec.md).
 
 ## 4. Planned source layout
 
-No app code exists in Phase 0. This is the target structure for Phase 1+.
+No app code existed in Phase 0. The Phase 1 shell now implements part of this structure;
+the tree below remains the target layout.
 
 ```text
 src/
@@ -236,12 +239,13 @@ export interface Finding {
   segmentIds: string[];
 }
 
-export interface ScenarioFlags {
-  /** On: malicious sample; off: benign twin with the same layout. Not a defense. */
-  indirectInjection: boolean;
+export interface DemoOptions {
+  /** Malicious sample or its benign twin. Not a defense. */
+  variant: 'malicious' | 'benign';
   multiTurn: boolean;
   toolCalling: boolean;
   renderMarkdown: boolean;
+  ocr: boolean;
 }
 
 export interface DefenseFlags {
@@ -330,7 +334,7 @@ export interface RunRecord {
   id: string;
   startedAt: string;
   preset: PresetId | 'custom';
-  scenario: ScenarioFlags;
+  demo: DemoOptions;
   flags: DefenseFlags;
   modelId: string;
   temperature: number;
@@ -351,7 +355,7 @@ export interface RunRecord {
     promptTokens?: number;
     completionTokens?: number;
     flagResults: Record<keyof DefenseFlags, 'applied' | 'no-op' | 'skipped' | 'failed'>;
-    scenarioResults: Record<keyof ScenarioFlags, 'applied' | 'no-op' | 'skipped' | 'failed'>;
+    demoResults: Record<keyof DemoOptions, 'applied' | 'no-op' | 'skipped' | 'failed'>;
   };
 }
 ```
@@ -377,7 +381,7 @@ sequenceDiagram
     participant OG as Output guard
 
     U->>UI: select sample / upload file
-    UI->>UI: apply scenario: malicious sample or benign twin
+    UI->>UI: apply demo setup: malicious sample or benign twin
     UI->>ING: bytes + filename + declared MIME
     ING->>ING: sniff type, enforce limits
     ING-->>UI: segments + metadata + page count
@@ -397,7 +401,7 @@ sequenceDiagram
 
 Key ordering rules:
 
-1. Scenario selection and extraction/detection complete before Run is enabled.
+1. Demo setup selection and extraction/detection complete before Run is enabled.
 2. `input.failClosed` and `human.review` run after detection and before sanitization.
 3. The Prompt inspector must display the **exact** messages sent to the engine.
 4. The verdict is computed from the final output and the run's payload canary.
@@ -484,7 +488,7 @@ Metadata:
 - Low-contrast recovery: a second OCR pass on a grayscale + contrast-stretched canvas
   (linear stretch between the 2nd and 98th percentiles). Findings from the second pass
   are labeled `ocr-low-contrast`.
-- OCR is optional (`input.ocr` flag). When off, the image is still inspected for
+- OCR is optional (`demo.ocr` flag). When off, the image is still inspected for
   metadata, but no text is extracted and the UI explains why.
 
 OCR is the slowest ingest path. Show a progress state and never block the whole app.
@@ -758,7 +762,7 @@ If `output.blockCanary=true` and a high-confidence signal is present:
 If `output.schemaValidation=true`, validate the JSON output against the schema before
 display; invalid output is rejected and recorded. Schema validation is syntactic only.
 
-If `scenario.renderMarkdown` and `output.safeRendering=true`, sanitize the rendered
+If `demo.renderMarkdown` and `output.safeRendering=true`, sanitize the rendered
 output: no raw HTML, no remote images, no active links. With rendering off, the flag is a
 no-op.
 

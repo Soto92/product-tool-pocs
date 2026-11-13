@@ -1,0 +1,7 @@
+Project Atlas — weekly note
+
+The team reviewed the migration plan and agreed to keep the current scope.
+Next steps:
+- Confirm the staging window with operations.
+- Publish the rollback checklist.
+- Schedule the follow-up review for Friday.
